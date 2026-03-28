@@ -1,4 +1,5 @@
-﻿@model IEnumerable<Post>
+﻿@using BlogiFy.Helpers
+@model IEnumerable<Post>
 @{
     ViewData["Title"] = "Blog Posts";
 }
@@ -14,6 +15,10 @@
     }
 </div>
 
+<div class="text-end my-2">
+    <a class="btn btn-primary" asp-action="Create" asp-controller="Post">Create New Post</a>
+</div>
+
 <div class="row row-cols-3 g-4">
     @foreach(var post in Model)
     {
@@ -23,6 +28,28 @@
                 class="card-img-top"
                 alt="@post.Title"
                 style="height:300px; object-fit:cover"/>
+
+                <div class="card-body">
+                    <h5 class="card-title">@post.Title</h5>
+                    <p class="text-muted mb-2">Published On @post.PublishedDate.ToString("MMM dd,yyyy")</p>
+
+                    @{
+                        var content = RemoveHtmlTagHelper.RemoveHtmlTags(post.Content);
+                    }
+
+                    <p class="card-text">
+                        @(content.Length>100 ? content.Substring(0,100) +"...": content)
+                    </p>
+
+                    <span class="badge bg-light">@post.Category?.Name</span>
+                </div>
+
+                <div class="card-footer d-flex justify-content-between align-items-center">
+                    <a class="btn btn-primary btn-sm" asp-action="Detail" asp-controller="Post" asp-route-id="@post.Id">Read More</a>
+                    <div class="text-end">
+                        <div class="text-muted">By @post.Author</div>
+                    </div>
+                </div>
             </div>
         </div>
     }

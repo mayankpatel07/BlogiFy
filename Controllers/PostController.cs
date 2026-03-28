@@ -1,4 +1,5 @@
 ﻿using BlogiFy.Data;
+using BlogiFy.Models;
 using BlogiFy.Models.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -29,6 +30,22 @@ namespace BlogiFy.Controllers
             var posts = postQuery.ToList();
             ViewBag.Categories = _context.Categories.ToList();
             return View(posts);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Detail(int id)
+        {
+            if(id == null)
+            {
+                return NoContent();
+            }
+            var post =_context.Posts.Include(p=>p.Category).Include(p=>p.Comments).FirstOrDefault(p=>p.Id == id);
+
+            if(post == null)
+            {
+                return NotFound();
+            }
+            return View(post);
         }
 
 
@@ -62,8 +79,58 @@ namespace BlogiFy.Controllers
                 await _context.SaveChangesAsync();
                 return RedirectToAction("Index");
             }
+            postViewModel.Categories = _context.Categories.Select(c =>
+               new SelectListItem
+               {
+                   Value = c.Id.ToString(),
+                   Text = c.Name,
+               }
+           ).ToList();
             return View(postViewModel);
         }
+
+        [HttpGet]
+        public async Task<IActionResult> Edit(int id)
+        {
+            if(id == null)
+            {
+                return NotFound();
+            }
+            var postFromDb = await _context.Posts.FirstOrDefaultAsync(p=>p.Id == id);
+
+            if (postFromDb == null) {
+                 return NotFound();
+            }
+
+            EditViewModel editViewModel = new EditViewModel
+            {
+                Post = postFromDb,
+                Categories = _context.Categories.Select(c =>
+                 new SelectListItem
+                 {
+                     Value = c.Id.ToString(),
+                     Text = c.Name,
+                 }
+                 ).ToList(),
+
+            };
+
+            return View(editViewModel);
+        }
+
+        public JsonResult AddComment([FromBody]Comment comment)
+        {
+            comment.CommentDate= DateTime.Now;
+            _context.Comments.Add(comment);
+            _context.SaveChanges();
+            return Json(new
+            {
+                username = comment.UserName,
+                commentDate = comment.CommentDate.ToString("MMMM dd, yyyy"),
+                content = comment.Content
+            });
+        }
+
         public async Task<string> UploadFiletoFolder(IFormFile file)
         {
             var inputFileExtension = Path.GetExtension(file.FileName);
